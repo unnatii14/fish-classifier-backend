@@ -81,14 +81,12 @@ def setup_transforms():
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-# Initialize model and transforms on startup
-@app.on_event("startup")
-async def startup_event():
-    setup_transforms()
-    if not load_model():
-        print("⚠️  Running in DEMO MODE - Model not loaded")
-        print("📝 All endpoints work except actual prediction")
-        print("🔧 To enable predictions: upload 'best_model_efficientnet.pth' to your deployment")
+# Initialize on module load instead of startup event
+setup_transforms()
+if not load_model():
+    print("⚠️  Running in DEMO MODE - Model not loaded")
+    print("📝 All endpoints work except actual prediction") 
+    print("🔧 To enable predictions: upload 'best_model_efficientnet.pth' to your deployment")
 
 @app.get("/")
 async def root():
