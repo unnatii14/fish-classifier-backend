@@ -46,8 +46,16 @@ def load_model():
         in_features = model.classifier[1].in_features
         model.classifier[1] = nn.Linear(in_features, 31)
         
-        # Load weights - UPDATE THIS PATH
-        model_path = "best_model_efficientnet.pth"  # Put your model file here
+        # Check if model file exists
+        import os
+        model_path = "best_model_efficientnet.pth"
+        
+        if not os.path.exists(model_path):
+            print(f"⚠️  Model file '{model_path}' not found. API will run in demo mode.")
+            print("💡 For full functionality, upload your model file to the deployment.")
+            return False
+        
+        # Load weights
         model.load_state_dict(torch.load(model_path, map_location='cpu'))
         model.eval()
         
@@ -55,6 +63,7 @@ def load_model():
         return True
     except Exception as e:
         print(f"❌ Error loading model: {e}")
+        print("💡 API will continue running in demo mode.")
         return False
 
 def setup_transforms():
@@ -71,7 +80,9 @@ def setup_transforms():
 async def startup_event():
     setup_transforms()
     if not load_model():
-        print("⚠️  Warning: Model not loaded. Make sure 'best_model_efficientnet.pth' is in the same directory.")
+        print("⚠️  Running in DEMO MODE - Model not loaded")
+        print("📝 All endpoints work except actual prediction")
+        print("🔧 To enable predictions: upload 'best_model_efficientnet.pth' to your deployment")
 
 @app.get("/")
 async def root():
@@ -79,10 +90,12 @@ async def root():
         "message": "🐟 Fish Classifier API",
         "status": "running",
         "model_loaded": model is not None,
+        "mode": "Production" if model is not None else "Demo Mode - Model file missing",
         "total_classes": len(CLASS_NAMES),
+        "note": "Upload 'best_model_efficientnet.pth' to enable predictions" if model is None else "All features available",
         "endpoints": {
-            "predict": "/predict - Upload image for classification",
-            "predict_base64": "/predict-base64 - Send base64 image",
+            "predict": "/predict - Upload image for classification" + (" (DEMO MODE)" if model is None else ""),
+            "predict_base64": "/predict-base64 - Send base64 image" + (" (DEMO MODE)" if model is None else ""),
             "classes": "/classes - Get all fish species",
             "health": "/health - API health check"
         }
@@ -107,7 +120,20 @@ async def get_classes():
 async def predict_fish(file: UploadFile = File(...)):
     """Predict fish species from uploaded image"""
     if model is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+        # Return demo response instead of error
+        return {
+            "success": False,
+            "demo_mode": True,
+            "message": "API running in demo mode - model file not found",
+            "note": "Upload 'best_model_efficientnet.pth' to enable actual predictions",
+            "demo_predictions": [
+                {"species": "Tilapia", "confidence": 95.5},
+                {"species": "Catfish", "confidence": 3.2},
+                {"species": "Bangus", "confidence": 1.3}
+            ],
+            "top_prediction": "Tilapia (Demo)",
+            "confidence": 95.5
+        }
     
     # Validate file type
     if not file.content_type.startswith('image/'):
@@ -150,7 +176,20 @@ async def predict_fish(file: UploadFile = File(...)):
 async def predict_fish_base64(data: Dict):
     """Predict fish species from base64 encoded image"""
     if model is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+        # Return demo response instead of error
+        return {
+            "success": False,
+            "demo_mode": True,
+            "message": "API running in demo mode - model file not found",
+            "note": "Upload 'best_model_efficientnet.pth' to enable actual predictions",
+            "demo_predictions": [
+                {"species": "Bangus", "confidence": 92.1},
+                {"species": "Tilapia", "confidence": 5.8},
+                {"species": "Catfish", "confidence": 2.1}
+            ],
+            "top_prediction": "Bangus (Demo)",
+            "confidence": 92.1
+        }
     
     try:
         # Decode base64 image
