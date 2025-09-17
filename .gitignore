@@ -3,6 +3,8 @@
 *.pkl
 *.h5
 *.model
+*.onnx
+*.tflite
 
 # Python
 __pycache__/
@@ -25,21 +27,44 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual environments
 venv/
 env/
 ENV/
+.venv/
+.env
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-*
 
 # OS
 .DS_Store
 Thumbs.db
+*.tmp
+*.temp
 
 # Logs
 *.log
+logs/
+
+# Testing
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Temporary files
+*.bak
+*.orig
+*~
