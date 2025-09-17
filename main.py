@@ -1,4 +1,9 @@
-# main.py - Complete Fish Classifier API
+# main.py - Complete Fish Classifier API (Railway Optimized)
+import os
+# Set environment variables for memory optimization
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import torch
@@ -7,10 +12,11 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
 import io
-import numpy as np
 import base64
 from typing import Dict
-import json
+
+# Set torch to use single thread for smaller memory footprint
+torch.set_num_threads(1)
 
 app = FastAPI(title="Fish Classifier API", description="Classify fish species using EfficientNet", version="1.0.0")
 
