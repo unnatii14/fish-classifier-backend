@@ -1,6 +1,4 @@
-# Exclude large model file and unnecessary files
-best_model_efficientnet.pth
-*.pth
+# Large files we don't need in Docker (keep model files we need)
 *.pkl
 *.h5
 

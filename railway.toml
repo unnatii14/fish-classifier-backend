@@ -1,5 +1,6 @@
 [build]
 builder = "nixpacks"
+buildCommand = "pip install --no-cache-dir -r requirements.txt"
 
 [deploy]
 startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
@@ -11,3 +12,5 @@ restartPolicyType = "never"
 PYTHON_VERSION = "3.10"
 PIP_NO_CACHE_DIR = "1"
 PIP_DISABLE_PIP_VERSION_CHECK = "1"
+PYTORCH_BUILD_VERSION = "1.13.0"
+PYTORCH_BUILD_NUMBER = "1"
