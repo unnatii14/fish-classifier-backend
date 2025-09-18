@@ -1,6 +1,6 @@
 # Fish Classifier API
 
-A simple FastAPI application for fish species classification. Classifies 31 different fish species using deep learning.
+A FastAPI application for fish species classification and similarity search. Classifies 31 different fish species using deep learning and finds similar images.
 
 ## Live Demo
 **API URL**: https://web-production-cc66.up.railway.app  
@@ -8,8 +8,9 @@ A simple FastAPI application for fish species classification. Classifies 31 diff
 
 ## Features
 - 31 fish species classification
+- Image similarity search
 - RESTful API with FastAPI
-- Demo mode with sample predictions
+- Real-time image processing
 - CORS enabled for web/mobile apps
 
 ## API Endpoints
@@ -21,10 +22,17 @@ A simple FastAPI application for fish species classification. Classifies 31 diff
 | GET | `/classes` | List all fish species |
 | POST | `/predict` | Upload image for prediction |
 | POST | `/predict-base64` | Base64 image prediction |
+| POST | `/find-similar` | Find similar images |
 
 ## Quick Test
 ```bash
+# Get fish species
 curl https://web-production-cc66.up.railway.app/classes
+
+# Find similar images (upload a fish image)
+curl -X POST "https://web-production-cc66.up.railway.app/find-similar" \
+  -F "file=@fish_image.jpg" \
+  -F "top_k=5"
 ```
 
 ## Local Setup

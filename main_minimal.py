@@ -1,7 +1,8 @@
 # main_minimal.py - Minimal version for initial Railway deployment
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+import numpy as np
 
 app = FastAPI(title="Fish Classifier API", description="Classify fish species using EfficientNet", version="1.0.0")
 
@@ -89,6 +90,32 @@ async def predict_fish_base64():
         ],
         "top_prediction": "Bangus (Demo)",
         "confidence": 92.1
+    }
+
+@app.post("/find-similar")
+async def find_similar(file: UploadFile = File(...), top_k: int = 5):
+    """
+    Find top-k most similar images to the uploaded image.
+    This is a placeholder for demo mode. For real similarity search, use your full model version.
+    """
+    # --- DEMO RESPONSE ---
+    # In your full version, you would:
+    # 1. Preprocess the uploaded image
+    # 2. Extract embedding using your model
+    # 3. Load val_embeddings.npy and val_image_paths.txt
+    # 4. Compute cosine similarity
+    # 5. Return top_k most similar images
+    return {
+        "success": True,
+        "message": "Demo mode: Similarity search is not available in minimal version.",
+        "top_k": top_k,
+        "similar_images": [
+            {"image_path": "images/bangus_1.jpg", "score": 0.99},
+            {"image_path": "images/bangus_2.jpg", "score": 0.97},
+            {"image_path": "images/bangus_3.jpg", "score": 0.95},
+            {"image_path": "images/bangus_4.jpg", "score": 0.93},
+            {"image_path": "images/bangus_5.jpg", "score": 0.91}
+        ]
     }
 
 @app.get("/model-info")
