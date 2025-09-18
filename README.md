@@ -1,54 +1,58 @@
 # Fish Classifier API
 
-A FastAPI application for fish species classification and similarity search. Classifies 31 different fish species using deep learning and finds similar images.
+A production-ready FastAPI application for fish species classification and similarity search using deep learning. Deployed on Railway with EfficientNet-B0 architecture for accurate fish identification across 31 species.
 
 ## Live Demo
 **API URL**: https://web-production-cc66.up.railway.app  
-**Documentation**: https://web-production-cc66.up.railway.app/docs
+**Interactive Docs**: https://web-production-cc66.up.railway.app/docs
 
 ## Features
-- 31 fish species classification
-- Image similarity search
-- RESTful API with FastAPI
-- Real-time image processing
-- CORS enabled for web/mobile apps
+- **31 Fish Species Classification** - Accurate identification using EfficientNet-B0
+- **Image Similarity Search** - Find visually similar fish using deep embeddings
+- **RESTful API** - Well-documented FastAPI with automatic OpenAPI docs
+- **Production Ready** - Optimized for Railway deployment with health checks
+- **CORS Enabled** - Ready for web and mobile app integration
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | API status |
-| GET | `/health` | Health check |
-| GET | `/classes` | List all fish species |
-| POST | `/predict` | Upload image for prediction |
-| POST | `/predict-base64` | Base64 image prediction |
-| POST | `/find-similar` | Find similar images |
+| Method | Endpoint | Description | Parameters |
+|--------|----------|-------------|------------|
+| GET | `/` | API status and info | - |
+| GET | `/health` | Health check | - |
+| GET | `/classes` | List all 31 fish species | - |
+| POST | `/predict` | Classify fish image | `file`: image |
+| POST | `/predict-base64` | Classify base64 image | `image`: base64 string |
+| POST | `/find-similar` | Find similar fish images | `file`: image, `top_k`: int |
 
-## Quick Test
+## Quick Start
 ```bash
-# Get fish species
+# Health check
+curl https://web-production-cc66.up.railway.app/health
+
+# Get all fish species
 curl https://web-production-cc66.up.railway.app/classes
 
-# Find similar images (upload a fish image)
+# Classify fish (upload image)
+curl -X POST "https://web-production-cc66.up.railway.app/predict" \
+  -F "file=@your_fish_image.jpg"
+
+# Find similar fish
 curl -X POST "https://web-production-cc66.up.railway.app/find-similar" \
-  -F "file=@fish_image.jpg" \
+  -F "file=@your_fish_image.jpg" \
   -F "top_k=5"
 ```
 
-## Local Setup
+## Local Development
 ```bash
 git clone https://github.com/unnatii14/fish-classifier-backend.git
 cd fish-classifier-backend
 pip install -r requirements.txt
-uvicorn main_minimal:app --reload
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## Deploy to Railway
-1. Fork this repository
-2. Connect to Railway
-3. Deploy automatically
-
 ## Tech Stack
-- FastAPI
-- Python 3.10
-- Railway deployment
+- **Framework**: FastAPI with Uvicorn
+- **ML Model**: EfficientNet-B0 (PyTorch)
+- **Similarity**: Cosine similarity with scikit-learn
+- **Deployment**: Railway (CPU-optimized)
+- **Python**: 3.10+
