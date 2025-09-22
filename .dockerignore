@@ -1,0 +1,42 @@
+# Large files we don't need in Docker (keep model files we need)
+*.pkl
+*.h5
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Documentation
+README.md
+docs/
+
+# Tests (if any)
+tests/
+test_*
+*_test.py
+
+# Development files
+.env
+.env.local
+docker-compose.yml

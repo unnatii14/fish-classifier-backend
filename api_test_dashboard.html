@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fish API Test Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .test-button:hover { background: #45a049; }
+        .result-box { background: #f9f9f9; padding: 15px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #4CAF50; }
+        .error-box { background: #fff5f5; border-left: 4px solid #ff4444; }
+        .success-box { background: #f5fff5; border-left: 4px solid #4CAF50; }
+        .warning-box { background: #fff9f0; border-left: 4px solid #ff9800; }
+        .image-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 10px 0; }
+        .image-item { text-align: center; padding: 10px; background: #f0f0f0; border-radius: 4px; }
+        .image-item img { max-width: 80px; max-height: 80px; border-radius: 4px; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-success { background-color: #4CAF50; }
+        .status-error { background-color: #ff4444; }
+        .status-pending { background-color: #ffa500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐟 Fish Classifier API Test Dashboard</h1>
+        <p>This dashboard tests all aspects of your Fish Classifier API to ensure it's working correctly.</p>
+        
+        <!-- Server Status -->
+        <div class="test-section">
+            <h2><span id="server-status" class="status-indicator status-pending"></span>Server Status</h2>
+            <button class="test-button" onclick="testServerHealth()">Test Server Connection</button>
+            <div id="server-result" class="result-box" style="display:none;"></div>
+        </div>
+        
+        <!-- Classification Test -->
+        <div class="test-section">
+            <h2><span id="classify-status" class="status-indicator status-pending"></span>Fish Classification Test</h2>
+            <p>Tests the /predict-base64 endpoint with different image types</p>
+            <button class="test-button" onclick="testClassification()">Test Classification</button>
+            <div id="classify-result" class="result-box" style="display:none;"></div>
+        </div>
+        
+        <!-- Similar Images Test -->
+        <div class="test-section">
+            <h2><span id="similar-status" class="status-indicator status-pending"></span>Similar Images Test</h2>
+            <p>Tests the /find-similar-base64 endpoint</p>
+            <button class="test-button" onclick="testSimilarImages()">Test Similar Images</button>
+            <div id="similar-result" class="result-box" style="display:none;"></div>
+        </div>
+        
+        <!-- Fish Image Endpoint Test -->
+        <div class="test-section">
+            <h2><span id="fishimg-status" class="status-indicator status-pending"></span>Fish Image Serving Test</h2>
+            <p>Tests the /fish-image/{index} endpoint</p>
+            <button class="test-button" onclick="testFishImages()">Test Fish Images</button>
+            <div id="fishimg-result" class="result-box" style="display:none;"></div>
+        </div>
+        
+        <!-- Complete Integration Test -->
+        <div class="test-section">
+            <h2><span id="integration-status" class="status-indicator status-pending"></span>Complete Integration Test</h2>
+            <p>Tests the complete workflow: Classification → Similar Images → Image Loading</p>
+            <button class="test-button" onclick="testCompleteWorkflow()">Test Complete Workflow</button>
+            <div id="integration-result" class="result-box" style="display:none;"></div>
+        </div>
+        
+        <!-- Overall Status -->
+        <div class="test-section">
+            <h2>📊 Overall Test Status</h2>
+            <div id="overall-status">Click the test buttons above to check your API functionality</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8001';
+        let testResults = {
+            server: false,
+            classify: false,
+            similar: false,
+            fishimg: false,
+            integration: false
+        };
+
+        function updateStatus(testName, success) {
+            testResults[testName] = success;
+            const statusEl = document.getElementById(`${testName}-status`);
+            statusEl.className = `status-indicator ${success ? 'status-success' : 'status-error'}`;
+            updateOverallStatus();
+        }
+
+        function updateOverallStatus() {
+            const total = Object.keys(testResults).length;
+            const passed = Object.values(testResults).filter(r => r).length;
+            const overall = document.getElementById('overall-status');
+            
+            if (passed === 0) {
+                overall.innerHTML = '⏳ No tests completed yet';
+            } else if (passed === total) {
+                overall.innerHTML = '🎉 All tests passed! Your API is working perfectly!';
+                overall.className = 'result-box success-box';
+            } else {
+                overall.innerHTML = `⚠️ ${passed}/${total} tests passed. Check failed tests above.`;
+                overall.className = 'result-box warning-box';
+            }
+        }
+
+        function createTestImage(color = 'blue') {
+            const canvas = document.createElement('canvas');
+            canvas.width = 224;
+            canvas.height = 224;
+            const ctx = canvas.getContext('2d');
+            
+            // Fill with color
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, 224, 224);
+            
+            // Add text
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('TEST', 112, 100);
+            ctx.fillText('IMAGE', 112, 130);
+            
+            return canvas.toDataURL('image/jpeg').split(',')[1];
+        }
+
+        async function testServerHealth() {
+            const resultDiv = document.getElementById('server-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🔍 Testing server connection...';
+            
+            try {
+                const response = await fetch(`${API_URL}/`);
+                if (response.ok) {
+                    resultDiv.innerHTML = '✅ Server is running and responsive!';
+                    resultDiv.className = 'result-box success-box';
+                    updateStatus('server', true);
+                } else {
+                    resultDiv.innerHTML = `❌ Server responded with status ${response.status}`;
+                    resultDiv.className = 'result-box error-box';
+                    updateStatus('server', false);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Cannot connect to server: ${error.message}<br><br>💡 Make sure your server is running on port 8001`;
+                resultDiv.className = 'result-box error-box';
+                updateStatus('server', false);
+            }
+        }
+
+        async function testClassification() {
+            const resultDiv = document.getElementById('classify-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🐟 Testing fish classification...';
+            
+            try {
+                const testImage = createTestImage('blue');
+                const response = await fetch(`${API_URL}/predict-base64`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: testImage, top_k: 3 })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const predictions = data.predictions || [];
+                    
+                    let html = `✅ Classification successful!<br>📊 Got ${predictions.length} predictions:<br><br>`;
+                    predictions.forEach((pred, i) => {
+                        html += `${i + 1}. <strong>${pred.species}</strong>: ${(pred.confidence * 100).toFixed(1)}%<br>`;
+                    });
+                    
+                    resultDiv.innerHTML = html;
+                    resultDiv.className = 'result-box success-box';
+                    updateStatus('classify', true);
+                } else {
+                    resultDiv.innerHTML = `❌ Classification failed with status ${response.status}`;
+                    resultDiv.className = 'result-box error-box';
+                    updateStatus('classify', false);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Classification error: ${error.message}`;
+                resultDiv.className = 'result-box error-box';
+                updateStatus('classify', false);
+            }
+        }
+
+        async function testSimilarImages() {
+            const resultDiv = document.getElementById('similar-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🔍 Testing similar images...';
+            
+            try {
+                const testImage = createTestImage('red');
+                const response = await fetch(`${API_URL}/find-similar-base64`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: testImage, top_k: 5 })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const similar = data.similar_images || [];
+                    
+                    let html = `✅ Similar images search successful!<br>📊 Found ${similar.length} similar images:<br><br>`;
+                    similar.slice(0, 3).forEach((img, i) => {
+                        html += `${i + 1}. <strong>${img.species_name}</strong><br>`;
+                        html += `   File: ${img.filename}<br>`;
+                        html += `   Similarity: ${(img.similarity * 100).toFixed(1)}%<br><br>`;
+                    });
+                    
+                    resultDiv.innerHTML = html;
+                    resultDiv.className = 'result-box success-box';
+                    updateStatus('similar', true);
+                } else {
+                    resultDiv.innerHTML = `❌ Similar images failed with status ${response.status}`;
+                    resultDiv.className = 'result-box error-box';
+                    updateStatus('similar', false);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Similar images error: ${error.message}`;
+                resultDiv.className = 'result-box error-box';
+                updateStatus('similar', false);
+            }
+        }
+
+        async function testFishImages() {
+            const resultDiv = document.getElementById('fishimg-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🖼️ Testing fish image serving...';
+            
+            try {
+                const testIndices = [0, 1, 2, 100, 500];
+                let html = '✅ Fish image endpoint test results:<br><br>';
+                let successCount = 0;
+                
+                for (const index of testIndices) {
+                    const response = await fetch(`${API_URL}/fish-image/${index}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            html += `✅ Index ${index}: ${data.species_name} (${data.filename})<br>`;
+                            successCount++;
+                        } else {
+                            html += `⚠️ Index ${index}: No data available<br>`;
+                        }
+                    } else {
+                        html += `❌ Index ${index}: Request failed<br>`;
+                    }
+                }
+                
+                html += `<br>📊 Successfully loaded ${successCount}/${testIndices.length} fish images`;
+                resultDiv.innerHTML = html;
+                resultDiv.className = successCount > 0 ? 'result-box success-box' : 'result-box error-box';
+                updateStatus('fishimg', successCount > 0);
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Fish images error: ${error.message}`;
+                resultDiv.className = 'result-box error-box';
+                updateStatus('fishimg', false);
+            }
+        }
+
+        async function testCompleteWorkflow() {
+            const resultDiv = document.getElementById('integration-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🔄 Testing complete workflow...';
+            
+            try {
+                const testImage = createTestImage('green');
+                
+                // Step 1: Classification
+                const classifyResponse = await fetch(`${API_URL}/predict-base64`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: testImage, top_k: 3 })
+                });
+                
+                if (!classifyResponse.ok) throw new Error('Classification failed');
+                const classifyData = await classifyResponse.json();
+                
+                // Step 2: Similar Images
+                const similarResponse = await fetch(`${API_URL}/find-similar-base64`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: testImage, top_k: 5 })
+                });
+                
+                if (!similarResponse.ok) throw new Error('Similar images failed');
+                const similarData = await similarResponse.json();
+                
+                // Step 3: Load fish images
+                const similar = similarData.similar_images || [];
+                let imageLoadCount = 0;
+                let imageHtml = '<div class="image-grid">';
+                
+                for (const img of similar.slice(0, 3)) {
+                    const imgResponse = await fetch(`${API_URL}/fish-image/${img.index}`);
+                    if (imgResponse.ok) {
+                        const imgData = await imgResponse.json();
+                        if (imgData.success && imgData.image_base64) {
+                            imageHtml += `
+                                <div class="image-item">
+                                    <img src="${imgData.image_base64}" alt="${imgData.species_name}">
+                                    <div>${imgData.species_name}</div>
+                                    <div style="font-size: 12px; color: #666;">${(img.similarity * 100).toFixed(1)}%</div>
+                                </div>
+                            `;
+                            imageLoadCount++;
+                        }
+                    }
+                }
+                imageHtml += '</div>';
+                
+                let html = `✅ Complete workflow test successful!<br><br>`;
+                html += `🎯 Classification: ${classifyData.predictions.length} predictions<br>`;
+                html += `🔍 Similar Images: ${similar.length} found<br>`;
+                html += `🖼️ Image Loading: ${imageLoadCount}/3 loaded<br><br>`;
+                html += `<strong>Top Prediction:</strong> ${classifyData.predictions[0].species} (${(classifyData.predictions[0].confidence * 100).toFixed(1)}%)<br><br>`;
+                html += `<strong>Similar Images with Thumbnails:</strong><br>`;
+                html += imageHtml;
+                
+                resultDiv.innerHTML = html;
+                resultDiv.className = 'result-box success-box';
+                updateStatus('integration', true);
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Workflow test failed: ${error.message}`;
+                resultDiv.className = 'result-box error-box';
+                updateStatus('integration', false);
+            }
+        }
+
+        // Auto-test server on page load
+        window.onload = function() {
+            setTimeout(testServerHealth, 1000);
+        };
+    </script>
+</body>
+</html>

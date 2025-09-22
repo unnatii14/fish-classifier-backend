@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Similar Images Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Quick Similar Images Test</h1>
+    <button onclick="testSimilarImages()">Test Similar Images API</button>
+    <div id="results"></div>
+
+    <script>
+        async function testSimilarImages() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = 'Testing...';
+            
+            try {
+                // Create a simple test image (like our Python test)
+                const canvas = document.createElement('canvas');
+                canvas.width = 224;
+                canvas.height = 224;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#6496c8';
+                ctx.fillRect(0, 0, 224, 224);
+                
+                // Convert to base64
+                const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
+                
+                console.log('Testing with base64 image length:', base64Image.length);
+                
+                // Test the API
+                const response = await fetch('http://127.0.0.1:8002/find-similar-base64?top_k=5', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: base64Image })
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Received data:', data);
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="result">
+                            <h3>✅ API Response Success!</h3>
+                            <p><strong>Success:</strong> ${data.success}</p>
+                            <p><strong>Similar Images Found:</strong> ${data.similar_images ? data.similar_images.length : 0}</p>
+                        </div>
+                    `;
+                    
+                    if (data.similar_images && data.similar_images.length > 0) {
+                        data.similar_images.forEach((img, index) => {
+                            const filename = img.image_path.split('/').pop();
+                            const score = Math.abs(img.similarity * 100);
+                            
+                            resultsDiv.innerHTML += `
+                                <div class="result">
+                                    <strong>${index + 1}. ${filename}</strong><br>
+                                    Similarity: ${score.toFixed(1)}%
+                                </div>
+                            `;
+                        });
+                    }
+                } else {
+                    resultsDiv.innerHTML = `<div class="result">❌ API Error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultsDiv.innerHTML = `<div class="result">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

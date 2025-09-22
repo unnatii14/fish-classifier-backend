@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Fish Image Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-container { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .image-preview { max-width: 100px; max-height: 100px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>Fish Image API Test</h1>
+    
+    <div class="test-container">
+        <h3>Test Fish Image Endpoint</h3>
+        <button onclick="testFishImage()">Test Fish Image</button>
+        <div id="fishImageResult"></div>
+    </div>
+    
+    <div class="test-container">
+        <h3>Test Similar Images with Images</h3>
+        <button onclick="testSimilarImages()">Test Similar Images</button>
+        <div id="similarImagesResult"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8002';
+        
+        async function testFishImage() {
+            const resultDiv = document.getElementById('fishImageResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_URL}/fish-image/0`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p>Status: ${response.status}</p>
+                    <p>Success: ${data.success}</p>
+                    <p>Species: ${data.species_name}</p>
+                    <p>Filename: ${data.filename}</p>
+                    ${data.image_base64 ? '<img src="' + data.image_base64 + '" class="image-preview">' : '<p>No image data</p>'}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testSimilarImages() {
+            const resultDiv = document.getElementById('similarImagesResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                // Create a simple test image (blue square)
+                const canvas = document.createElement('canvas');
+                canvas.width = 224;
+                canvas.height = 224;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(0, 0, 224, 224);
+                
+                // Convert to base64
+                const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
+                
+                // Get similar images
+                const response = await fetch(`${API_URL}/find-similar-base64`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Image, top_k: 3 })
+                });
+                
+                const data = await response.json();
+                
+                let html = `<p>Status: ${response.status}</p>`;
+                html += `<p>Found ${data.similar_images?.length || 0} similar images</p>`;
+                
+                if (data.similar_images) {
+                    for (const similar of data.similar_images.slice(0, 3)) {
+                        html += `<div style="border: 1px solid #eee; padding: 10px; margin: 5px;">`;
+                        html += `<p>Species: ${similar.species_name}</p>`;
+                        html += `<p>Similarity: ${(similar.similarity * 100).toFixed(1)}%</p>`;
+                        
+                        // Try to load the fish image
+                        try {
+                            const imageResponse = await fetch(`${API_URL}/fish-image/${similar.index}`);
+                            if (imageResponse.ok) {
+                                const imageData = await imageResponse.json();
+                                if (imageData.success && imageData.image_base64) {
+                                    html += `<img src="${imageData.image_base64}" class="image-preview">`;
+                                } else {
+                                    html += `<p>🐟 (placeholder)</p>`;
+                                }
+                            } else {
+                                html += `<p>🐟 (placeholder)</p>`;
+                            }
+                        } catch (imgError) {
+                            html += `<p>🐟 (placeholder)</p>`;
+                        }
+                        
+                        html += `</div>`;
+                    }
+                }
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

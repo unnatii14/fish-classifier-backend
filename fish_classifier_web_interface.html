@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐠 Fish Species Classifier - API Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #4facfe;
+            background: #f0f8ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #00f2fe;
+            background: #e6f7ff;
+            transform: scale(1.02);
+        }
+
+        .upload-area {
+            text-align: center;
+            cursor: pointer;
+            padding: 20px;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.1em;
+            color: #495057;
+            margin-bottom: 15px;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .preview-section {
+            text-align: center;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .api-status {
+            background: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .api-status.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+        }
+
+        .status-indicator.error {
+            background: #dc3545;
+        }
+
+        .results-section {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .predictions-card, .similar-images-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid #dee2e6;
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .prediction-item {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .prediction-item.top {
+            border-left-color: #28a745;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        }
+
+        .species-name {
+            font-weight: bold;
+            color: #495057;
+            flex-grow: 1;
+        }
+
+        .confidence {
+            background: #4facfe;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .prediction-item.top .confidence {
+            background: #28a745;
+        }
+
+        .similar-image {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .similar-image-placeholder {
+            width: 60px;
+            height: 60px;
+            background: #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: #6c757d;
+        }
+
+        .similar-info {
+            flex-grow: 1;
+        }
+
+        .similar-path {
+            font-size: 0.9em;
+            color: #6c757d;
+            word-break: break-all;
+        }
+
+        .similarity-score {
+            background: #17a2b8;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .api-config {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .api-url-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+
+        .test-api-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content, .results-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐠 Fish Species Classifier</h1>
+            <p>AI-powered Fish Recognition & Similarity Search - API Test Interface</p>
+        </div>
+
+        <div class="api-config">
+            <label for="apiUrl">API Base URL:</label>
+            <input type="text" id="apiUrl" class="api-url-input" value="http://127.0.0.1:8000" placeholder="Enter API URL">
+            <button class="test-api-btn" onclick="testApiConnection()">Test Connection</button>
+        </div>
+
+        <div id="apiStatus" class="api-status" style="display: none;">
+            <div class="status-indicator"></div>
+            <span id="statusText">Checking API connection...</span>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Click to upload or drag & drop a fish image</div>
+                    <button class="upload-button">Choose Image</button>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept="image/*" onchange="handleFileSelect(event)">
+            </div>
+
+            <div class="preview-section">
+                <img id="imagePreview" class="image-preview" alt="Preview">
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <div>Analyzing fish species...</div>
+                </div>
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <div class="results-grid">
+                <div class="predictions-card">
+                    <div class="card-title">
+                        🏆 Fish Species Predictions
+                    </div>
+                    <div id="predictionsList"></div>
+                </div>
+
+                <div class="similar-images-card">
+                    <div class="card-title">
+                        🔍 Similar Images
+                    </div>
+                    <div id="similarImagesList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentApiUrl = 'http://127.0.0.1:8000';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            testApiConnection();
+            setupDragAndDrop();
+        });
+
+        function setupDragAndDrop() {
+            const uploadSection = document.getElementById('uploadSection');
+
+            uploadSection.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadSection.classList.add('dragover');
+            });
+
+            uploadSection.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadSection.classList.remove('dragover');
+            });
+
+            uploadSection.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadSection.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect({target: {files: files}});
+                }
+            });
+        }
+
+        async function testApiConnection() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            currentApiUrl = apiUrl;
+            const statusDiv = document.getElementById('apiStatus');
+            const statusIndicator = statusDiv.querySelector('.status-indicator');
+            const statusText = document.getElementById('statusText');
+
+            statusDiv.style.display = 'flex';
+            statusText.textContent = 'Testing API connection...';
+
+            try {
+                const response = await fetch(`${apiUrl}/health`);
+                const data = await response.json();
+
+                if (response.ok && data.status === 'healthy') {
+                    statusDiv.classList.remove('error');
+                    statusIndicator.classList.remove('error');
+                    statusText.textContent = `✅ API Connected! Model: ${data.model_loaded ? 'Loaded' : 'Not loaded'}, Embeddings: ${data.embeddings_loaded ? 'Loaded' : 'Not loaded'}`;
+                } else {
+                    throw new Error('API not healthy');
+                }
+            } catch (error) {
+                statusDiv.classList.add('error');
+                statusIndicator.classList.add('error');
+                statusText.textContent = `❌ API Connection Failed: ${error.message}`;
+            }
+        }
+
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Show preview
+            const preview = document.getElementById('imagePreview');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            // Convert to base64 and predict
+            await predictFishSpecies(file);
+        }
+
+        async function predictFishSpecies(file) {
+            const loading = document.getElementById('loading');
+            const errorMessage = document.getElementById('errorMessage');
+            const resultsSection = document.getElementById('resultsSection');
+
+            // Show loading
+            loading.style.display = 'block';
+            errorMessage.style.display = 'none';
+            resultsSection.style.display = 'none';
+
+            try {
+                // Convert file to base64
+                const base64 = await fileToBase64(file);
+                const imageData = base64.split(',')[1]; // Remove data:image/jpeg;base64, part
+
+                // Call prediction API
+                const predictionResponse = await fetch(`${currentApiUrl}/predict-base64`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({image: imageData})
+                });
+
+                if (!predictionResponse.ok) {
+                    throw new Error(`Prediction failed: ${predictionResponse.status}`);
+                }
+
+                const predictionData = await predictionResponse.json();
+
+                if (!predictionData.success) {
+                    throw new Error(predictionData.message || 'Prediction failed');
+                }
+
+                // Call similarity search API
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const similarityResponse = await fetch(`${currentApiUrl}/find-similar?top_k=5`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                let similarityData = {similar_images: []};
+                if (similarityResponse.ok) {
+                    similarityData = await similarityResponse.json();
+                }
+
+                // Display results
+                displayResults(predictionData, similarityData);
+
+            } catch (error) {
+                errorMessage.textContent = `Error: ${error.message}`;
+                errorMessage.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function displayResults(predictionData, similarityData) {
+            const resultsSection = document.getElementById('resultsSection');
+            const predictionsList = document.getElementById('predictionsList');
+            const similarImagesList = document.getElementById('similarImagesList');
+
+            // Display predictions
+            predictionsList.innerHTML = '';
+            predictionData.predictions.forEach((prediction, index) => {
+                const item = document.createElement('div');
+                item.className = `prediction-item ${index === 0 ? 'top' : ''}`;
+                item.innerHTML = `
+                    <span class="species-name">${prediction.species}</span>
+                    <span class="confidence">${prediction.confidence}%</span>
+                `;
+                predictionsList.appendChild(item);
+            });
+
+            // Display similar images
+            similarImagesList.innerHTML = '';
+            if (similarityData.similar_images && similarityData.similar_images.length > 0) {
+                similarityData.similar_images.forEach(similar => {
+                    const item = document.createElement('div');
+                    item.className = 'similar-image';
+                    item.innerHTML = `
+                        <div class="similar-image-placeholder">🐠</div>
+                        <div class="similar-info">
+                            <div class="similar-path">${similar.image_path.split('/').pop() || similar.image_path}</div>
+                        </div>
+                        <span class="similarity-score">${(similar.similarity_score * 100).toFixed(1)}%</span>
+                    `;
+                    similarImagesList.appendChild(item);
+                });
+            } else {
+                similarImagesList.innerHTML = '<p style="color: #6c757d; text-align: center;">No similar images found</p>';
+            }
+
+            resultsSection.style.display = 'block';
+        }
+
+        // Update API URL when changed
+        document.getElementById('apiUrl').addEventListener('change', function() {
+            currentApiUrl = this.value;
+        });
+    </script>
+</body>
+</html>
