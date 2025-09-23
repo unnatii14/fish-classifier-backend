@@ -1,1 +1,1 @@
-web: gunicorn main_minimal:app --host 0.0.0.0 --port $PORT --worker-class uvicorn.workers.UvicornWorker --timeout 120
+web: uvicorn main_railway_optimized:app --host 0.0.0.0 --port $PORT --workers 1 --timeout-keep-alive 30

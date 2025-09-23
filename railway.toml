@@ -3,9 +3,9 @@ builder = "nixpacks"
 buildCommand = "pip install --no-cache-dir -r requirements.txt"
 
 [deploy]
-startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1"
+startCommand = "uvicorn main_railway_optimized:app --host 0.0.0.0 --port $PORT --workers 1 --timeout-keep-alive 30"
 healthcheckPath = "/"
-healthcheckTimeout = 300
+healthcheckTimeout = 180
 restartPolicyType = "on_failure"
 
 [variables]

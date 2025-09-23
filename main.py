@@ -214,13 +214,7 @@ async def api_info():
         }
     }
 
-@app.get("/health")
-async def health_check():
-    return {
-        "status": "healthy",
-        "model_loaded": model is not None,
-        "embeddings_loaded": val_embeddings is not None
-    }
+# Duplicate health endpoint removed - using the more comprehensive one below
 
 @app.get("/classes")
 async def get_classes():
