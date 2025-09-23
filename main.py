@@ -148,8 +148,16 @@ def extract_features(image):
 
 # Initialize everything on module load
 setup_transforms()
-model_loaded = load_model()
-embeddings_loaded = load_embeddings()
+
+# Initialize model loading with better error handling for Railway
+try:
+    model_loaded = load_model()
+    embeddings_loaded = load_embeddings()
+    print("✅ Successfully loaded all models and embeddings")
+except Exception as e:
+    print(f"❌ Error during initialization: {e}")
+    model_loaded = False
+    embeddings_loaded = False
 
 @app.get("/")
 async def root():
