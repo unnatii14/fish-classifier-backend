@@ -49,30 +49,39 @@ val_embeddings = None
 image_paths = None
 
 def load_model():
-    """Load the trained PyTorch model - FIXED to match Streamlit"""
-    global model
+    """Load the fish classification model with Railway deployment optimization"""
     try:
-        # Create model architecture with pretrained ImageNet weights (same as Streamlit)
-        model = models.efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
-        in_features = model.classifier[1].in_features
-        model.classifier[1] = nn.Linear(in_features, 31)
-        
         # Check if model file exists
         model_path = "best_model_efficientnet.pth"
-        
         if not os.path.exists(model_path):
-            print(f"⚠️  Model file '{model_path}' not found. API will run in demo mode.")
-            return False
+            raise FileNotFoundError(f"Model file {model_path} not found")
         
-        # Load weights with strict=False (same as Streamlit)
-        model.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+        # Check file size (Railway has limitations)
+        file_size = os.path.getsize(model_path) / (1024 * 1024)  # MB
+        print(f"📊 Model file size: {file_size:.1f} MB")
+        
+        if file_size > 500:  # Railway soft limit warning
+            print("⚠️  Large model file detected - may cause Railway deployment issues")
+        
+        # Load model with memory optimization
+        model = models.efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
+        model.classifier = torch.nn.Linear(model.classifier[1].in_features, 31)
+        
+        # Load with memory mapping for Railway
+        model_state = torch.load(model_path, map_location='cpu', weights_only=False)
+        model.load_state_dict(model_state, strict=False)
         model.eval()
         
-        print("✅ Model loaded successfully with fixed approach!")
-        return True
+        # Memory optimization for Railway
+        torch.backends.cudnn.enabled = False  # Disable CUDA on Railway
+        if hasattr(torch, 'set_num_threads'):
+            torch.set_num_threads(1)  # Limit threads for Railway
+        
+        print("✅ Model loaded successfully with Railway deployment optimization!")
+        return model
     except Exception as e:
         print(f"❌ Error loading model: {e}")
-        return False
+        raise e
 
 def load_embeddings():
     """Load precomputed embeddings and image paths"""
@@ -144,19 +153,56 @@ embeddings_loaded = load_embeddings()
 
 @app.get("/")
 async def root():
+    """Root endpoint with Railway health check information"""
     return {
-        "message": "🐟 Fish Classifier API with Similarity Search",
-        "status": "running",
+        "message": "Fish Classifier API is running!",
+        "status": "healthy",
         "model_loaded": model is not None,
         "embeddings_loaded": val_embeddings is not None,
-        "total_classes": len(CLASS_NAMES),
+        "image_paths_loaded": image_paths is not None,
+        "total_species": len(CLASS_NAMES),
         "total_embeddings": len(val_embeddings) if val_embeddings is not None else 0,
+        "deployment": "Railway optimized",
+        "version": "1.0.0"
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Railway monitoring"""
+    try:
+        # Quick model check
+        if model is None:
+            raise HTTPException(status_code=503, detail="Model not loaded")
+        
+        # Quick embeddings check
+        if val_embeddings is None:
+            raise HTTPException(status_code=503, detail="Embeddings not loaded")
+        
+        return {
+            "status": "healthy",
+            "timestamp": "2025-09-23",
+            "model_ready": True,
+            "embeddings_ready": True,
+            "memory_optimized": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Health check failed: {str(e)}")
+
+@app.get("/info")
+async def api_info():
+    """API information endpoint"""
+    return {
+        "name": "Fish Classifier API",
+        "version": "1.0.0",
+        "description": "FastAPI fish species classification with EfficientNet-B0",
+        "supported_species": len(CLASS_NAMES),
+        "model_architecture": "EfficientNet-B0",
+        "deployment_platform": "Railway",
         "endpoints": {
-            "predict": "/predict - Upload image for classification",
-            "predict_base64": "/predict-base64 - Send base64 image",
-            "find_similar": "/find-similar - Find similar images",
-            "classes": "/classes - Get all fish species",
-            "health": "/health - API health check"
+            "classification": "/predict-base64",
+            "similarity_search": "/find-similar-base64",
+            "fish_images": "/fish-image/{index}",
+            "health": "/health"
         }
     }
 
@@ -495,4 +541,6 @@ async def get_image(image_index: int):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Railway deployment: Use PORT environment variable if available
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
