@@ -1,5 +1,5 @@
-# Large model files - too big for git
-*.pth
+# Large model files - now using Git LFS
+# *.pth (tracked by Git LFS)
 *.pkl
 *.h5
 *.model
