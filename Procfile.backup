@@ -1,0 +1,12 @@
+# Primary Procfile (current)
+web: gunicorn main_railway:app --host 0.0.0.0 --port $PORT --worker-class uvicorn.workers.UvicornWorker --timeout 120 --keep-alive 5
+
+# Alternative options if primary fails:
+# Option 1: Simple uvicorn
+# web: uvicorn main_railway:app --host 0.0.0.0 --port $PORT
+
+# Option 2: Original main.py
+# web: gunicorn main:app --host 0.0.0.0 --port $PORT --worker-class uvicorn.workers.UvicornWorker
+
+# Option 3: Python direct
+# web: python main_railway.py
